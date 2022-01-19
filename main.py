@@ -1,6 +1,7 @@
 import requests
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
+from csv import writer
 
 
 def url_formater(day=0):
@@ -22,6 +23,10 @@ def url_formater(day=0):
           f"&date_to={ret_weekday}%2C{ret_month_day}+{ret_month}+{ret_year}&adult_no=1&children_no=0&infant_no=0&searchFlight=&change_flight="
     return URL
 
+def find_year(direction, columns):
+    year = [col for col in columns if direction in col.text][0].text
+    return year.split()[-1]
+
 URL = url_formater(day=10)
 page = requests.get(URL)
 
@@ -29,9 +34,25 @@ soup = BeautifulSoup(page.content, 'html.parser')
 departs = soup.find(class_='fly5-depart').find_all(class_='fly5-result')
 fly_backs = soup.find(class_="fly5-return").find_all(class_='fly5-result')
 
+info_table = soup.find(class_="fly5-query").find_all(class_="col-5")
+departing_year = find_year("Departing", info_table)
+returning_year = find_year("Returning", info_table)
+#
+with open('flights_data.csv', 'w', encoding='utf8', newline='') as fl:
+    the_writer = writer(fl, delimiter=';')
+    header = ['outbound_departure_airport', 'outbound_arrival_airport', 'outbound_departure_time', 'outbound_arrival_time',
+              'inbound_departure_airport', 'inbound_arrival_airport', 'inbound_departure_time', 'inbound_arrival_time', 'total_price', 'taxes']
+    the_writer.writerow(header)
+
 for depart in departs:
     for fly_back in fly_backs:
-        print(depart.find(class_="flprice").text + " + " + fly_back.find(class_="flprice").text)
+        print(depart.find("td", {"data-title": "Departs"}).find(class_="fltime").text, end="")
+        print(depart.find("td", {"data-title": "Departs"}).find(class_="fldate").text, end="")
+        departure_airport = depart.find("td", {"data-title": "Departs"}).select("br")[0].next_sibling
+        print(departure_airport[1:4], end="")
+        print(departing_year, end="")
+        print()
+        # print(depart.find(class_="flprice").text + " + " + fly_back.find(class_="flprice").text)
 
 
 
