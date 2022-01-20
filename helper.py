@@ -47,3 +47,31 @@ def form_flight_data(flight_data, flight_year):
     arr_time = time_creation(arr_fl_time, arr_fl_date, flight_year)
 
     return [departure_airport, arrives_airport, dep_time, arr_time]
+
+def form_round_trip_data(depart, fly_back, departing_year, returning_year):
+    flight_info = []
+    dep_flight = form_flight_data(depart, departing_year)
+    flight_info.extend(dep_flight)
+    ret_flight = form_flight_data(fly_back, returning_year)
+    flight_info.extend(ret_flight)
+    return flight_info
+
+def get_price_and_tax(price_data):
+    elements = price_data.find_all(class_="fly5-bkdown")
+    total_price = 0
+    total_tax = 0
+    for element in elements:
+        amount = element.find_all(class_="num")
+        total_tax += float(amount[1].text.replace(",", ""))
+        total_price += float(amount[2].text.replace(",", ""))
+    tax = "{:.2f}".format(total_tax)
+    price = "{:.2f}".format(total_price)
+    return [price, tax]
+
+def find_lowest_price_id(pacs_ids):
+    for pac in pacs_ids:
+        select_btn = pac.find(class_="select-flight")
+        if select_btn is None:
+            continue
+        return pac.get('id')
+    return  None
