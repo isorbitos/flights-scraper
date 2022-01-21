@@ -49,8 +49,8 @@ with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
               'inbound_departure_airport', 'inbound_arrival_airport', 'inbound_departure_time', 'inbound_arrival_time',
               'total_price', 'taxes']
     the_writer.writerow(header)
-    for days_from_today in [10, 20]:
-        
+    for days_from_today in [10]:
+
         URL = url_formater(days_from_today)
 
         driver = webdriver.Chrome()
@@ -70,12 +70,14 @@ with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
             dep_packs_ids = depart.find_all(class_="flpackage")
             dep_pack_id =  find_lowest_price_id(dep_packs_ids)
             if dep_pack_id is None:
+                depart_table += 1
                 continue
             flyback_table = 1
             for fly_back in fly_backs:
                 ret_packs_ids = fly_back.find_all(class_="flpackage")
                 ret_pac_id = find_lowest_price_id(ret_packs_ids)
                 if dep_pack_id is None:
+                    flyback_table += 1
                     continue
 
                 flight_info = form_round_trip_data(depart, fly_back, departing_year, returning_year)
