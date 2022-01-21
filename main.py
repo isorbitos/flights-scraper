@@ -1,19 +1,28 @@
 import requests
+import logging
 from bs4 import BeautifulSoup
 from csv import writer
 
 from selenium.webdriver.common.by import By
 
 from helper import find_year, url_formater, form_round_trip_data, get_price_and_tax, find_lowest_price_id
-from selenium import webdriver
+from seleniumwire import webdriver
 import time
+
+logging.basicConfig(filename='http_req.log', encoding='utf-8', level=logging.INFO)
+with open("http_req.log", "w"):
+    pass
+
+#using BeutifulSoup
+#this part can only take data from one flights selection page, taxes i saw at this moment for every flight is 6$
+
 
 with open('flights_data.csv', 'w', encoding='utf8', newline='') as fl:
     the_writer = writer(fl, delimiter=';')
     header = ['outbound_departure_airport', 'outbound_arrival_airport', 'outbound_departure_time', 'outbound_arrival_time',
               'inbound_departure_airport', 'inbound_arrival_airport', 'inbound_departure_time', 'inbound_arrival_time', 'total_price', 'taxes']
     the_writer.writerow(header)
-    for days_from_today in [10, 20]:
+    for days_from_today in [10]:
         URL = url_formater(days_from_today)
         page = requests.get(URL)
 
@@ -40,7 +49,8 @@ with open('flights_data.csv', 'w', encoding='utf8', newline='') as fl:
 
 
 
-#advanced search with selenium to get 100% accuracy taxes and price
+#advanced search with Selenium and BeutifulSoup to get 100% accuracy taxes and price from next page
+#for this part need Cromedriver to be installed
 
 with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
     the_writer = writer(fl, delimiter=';')
@@ -49,13 +59,20 @@ with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
               'inbound_departure_airport', 'inbound_arrival_airport', 'inbound_departure_time', 'inbound_arrival_time',
               'total_price', 'taxes']
     the_writer.writerow(header)
-    for days_from_today in [10]:
+    for days_from_today in [10, 20]:
 
         URL = url_formater(days_from_today)
-
-        driver = webdriver.Chrome()
+        try:
+            driver = webdriver.Chrome()
+        except:
+            the_writer.writerow(['for this part you need download cromedriver.exe, and put it in path'
+                                 '(on window Advanced system settings-> Environment Variables -> new ->c:folders path)'])
+            break
+        driver.scopes = [
+            '.*fly540.*',
+        ]
         driver.get(URL)
-        time.sleep(6)
+        time.sleep(5)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
         departs = soup.find(class_='fly5-depart').find_all(class_='fly5-result')
@@ -94,11 +111,11 @@ with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
                 time.sleep(2)
 
                 return_table_row.find_element(By.XPATH, f'//*[@id="{ret_pac_id}"]/div/div[2]/button').click()
-                time.sleep(6)
+                time.sleep(5)
 
                 continue_btn = driver.find_element(By.XPATH, '//*[@id="continue-btn"]')
                 driver.execute_script("arguments[0].click();", continue_btn)
-                time.sleep(6)
+                time.sleep(5)
 
                 price_info = BeautifulSoup(driver.find_element(By.ID, "breakdown").get_attribute('innerHTML'), 'html.parser')
                 tax_and_price = get_price_and_tax(price_info)
@@ -106,9 +123,13 @@ with open('flights_data_advanced.csv', 'w', encoding='utf8', newline='') as fl:
                 flight_info.extend(tax_and_price)
 
                 driver.get(URL)
-                time.sleep(6)
+                time.sleep(5)
                 the_writer.writerow(flight_info)
                 flyback_table+=1
             depart_table+=1
+
+        for request in driver.requests:
+            if request.response:
+                logging.info(request.url)
 time.sleep(3)
 

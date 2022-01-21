@@ -6,6 +6,7 @@ def find_year(direction, columns):
     return year.split()[-1]
 
 def url_formater(day=0):
+    """Returns URL string"""
     depart_time = datetime.today() + timedelta(days=day)
     return_time = depart_time + timedelta(days=7)
 
@@ -25,6 +26,7 @@ def url_formater(day=0):
     return URL
 
 def time_creation(time, date, year):
+    """Returns date string fir csv file"""
     time = time[:-2] + " " + time[-2:]
     hours_and_mins = datetime.strftime(datetime.strptime(time, "%I:%M %p"), "%H:%M")
     month_and_day = date.replace(",", "").split()
@@ -35,6 +37,7 @@ def time_creation(time, date, year):
     return flight_time.strftime("%a %b %d %X GTM %Y")
 
 def form_flight_data(flight_data, flight_year):
+    """returns oney way flight data"""
     dep_fl_time = flight_data.find("td", {"data-title": "Departs"}).find(class_="fltime").text[1:-1]
     dep_fl_date = flight_data.find("td", {"data-title": "Departs"}).find(class_="fldate").text
 
@@ -49,6 +52,7 @@ def form_flight_data(flight_data, flight_year):
     return [departure_airport, arrives_airport, dep_time, arr_time]
 
 def form_round_trip_data(depart, fly_back, departing_year, returning_year):
+    """Returns round trip flight data, with all flights"""
     flight_info = []
     dep_flight = form_flight_data(depart, departing_year)
     flight_info.extend(dep_flight)
@@ -57,6 +61,7 @@ def form_round_trip_data(depart, fly_back, departing_year, returning_year):
     return flight_info
 
 def get_price_and_tax(price_data):
+    """returns flight total price and total tax"""
     elements = price_data.find_all(class_="fly5-bkdown")
     total_price = 0
     total_tax = 0
@@ -69,6 +74,7 @@ def get_price_and_tax(price_data):
     return [price, tax]
 
 def find_lowest_price_id(pacs_ids):
+    """check if not soldout too"""
     for pac in pacs_ids:
         select_btn = pac.find(class_="select-flight")
         if select_btn is None:
